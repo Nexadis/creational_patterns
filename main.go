@@ -8,6 +8,39 @@ import (
 	"time"
 )
 
+type config struct {
+	addr    string
+	dburi   string
+	timeout int64
+	logFile string
+}
+
+func (c *config) String() string {
+	return fmt.Sprintf("config {addr:%s, dburi:%s, timeout:%d, logFile:%s}", c.addr, c.dburi, c.timeout, c.logFile)
+}
+
+type opt func(c *config)
+
+func SetAddr(addr string) opt {
+	return func(c *config) {
+		c.addr = addr
+	}
+}
+
+func SetDBUri(dburi string) opt {
+	return func(c *config) {
+		c.dburi = dburi
+	}
+}
+
+func NewConfig(opts ...opt) *config {
+	c := &config{}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
+}
+
 // Node — интерфейс с методом Clone.
 type Node interface {
 	Clone() Node
@@ -104,7 +137,7 @@ func main() {
 		}(i)
 	}
 	time.Sleep(100 * time.Millisecond)
-	border("Clone")
+	border("Prototype")
 	folder := &Folder{
 		Children: []Node{
 			&File{Name: "file1"},
@@ -123,6 +156,9 @@ func main() {
 
 	clone := folder.Clone()
 	fmt.Printf("Clone:\n%s\n", clone)
+	border("FuncOpts")
+	config := NewConfig(SetAddr("Some addr"), SetDBUri("db uri"))
+	fmt.Println(config)
 }
 
 func border(name string) {
