@@ -5,8 +5,104 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 )
+
+// Customer — покупатель.
+type Customer struct {
+	Name string
+}
+
+func (c *Customer) SetName(name string) {
+	c.Name = name
+}
+
+func (c *Customer) String() string {
+	return fmt.Sprintf("Customer: %s", c.Name)
+}
+
+// Seller — продавец.
+type Seller struct {
+	Name string
+}
+
+func (c *Seller) SetName(name string) {
+	c.Name = name
+}
+
+func (c *Seller) String() string {
+	return fmt.Sprintf("Seller: %s", c.Name)
+}
+
+// Provider — интерфейс фабрики.
+type Provider interface {
+	NewCustomer() *Customer
+	NewSeller() *Seller
+}
+
+type YandexAuth struct{}
+
+func (y *YandexAuth) NewCustomer() *Customer {
+	var customer Customer
+	name := "Yandex Customer"
+	customer.SetName(name)
+	return &customer
+}
+
+func (y *YandexAuth) NewSeller() *Seller {
+	var seller Seller
+	name := "Yandex Seller"
+	seller.SetName(name)
+	return &seller
+}
+
+type GoogleAuth struct{}
+
+func (g *GoogleAuth) NewCustomer() *Customer {
+	var customer Customer
+	// получаем имя из Google-аккаунта
+	name := "Google Customer"
+	customer.SetName(name)
+	return &customer
+}
+
+func (g *GoogleAuth) NewSeller() *Seller {
+	var seller Seller
+	// получаем имя из Google-аккаунта
+	name := "Google Seller"
+	seller.SetName(name)
+	return &seller
+}
+
+func AuthFactory(provider string) Provider {
+	switch provider {
+	case "google":
+		return &GoogleAuth{}
+	case "yandex":
+		return &YandexAuth{}
+	default:
+		panic(fmt.Sprintf("unknown provider %s", provider))
+	}
+}
+
+func TestAuth(t *testing.T) {
+	googleAuth := AuthFactory("google")
+	yandexAuth := AuthFactory("yandex")
+
+	if googleAuth.NewCustomer().String() != "Customer: Google Customer" {
+		t.Errorf("wrong google customer")
+	}
+	if googleAuth.NewSeller().String() != "Seller: Google Seller" {
+		t.Errorf("wrong google seller")
+	}
+	if yandexAuth.NewCustomer().String() != "Customer: Yandex Customer" {
+		t.Errorf("wrong yandex customer")
+	}
+	if yandexAuth.NewSeller().String() != "Seller: Yandex Seller" {
+		t.Errorf("wrong yandex seller")
+	}
+}
 
 type config struct {
 	addr    string
@@ -159,6 +255,23 @@ func main() {
 	border("FuncOpts")
 	config := NewConfig(SetAddr("Some addr"), SetDBUri("db uri"))
 	fmt.Println(config)
+	border("Abstract Factory")
+
+	googleAuth := AuthFactory("google")
+	yandexAuth := AuthFactory("yandex")
+
+	if googleAuth.NewCustomer().String() == "Customer: Google Customer" {
+		fmt.Println("google customer is ok")
+	}
+	if googleAuth.NewSeller().String() == "Seller: Google Seller" {
+		fmt.Println("google seller is ok")
+	}
+	if yandexAuth.NewCustomer().String() == "Customer: Yandex Customer" {
+		fmt.Println("yandex customer is ok")
+	}
+	if yandexAuth.NewSeller().String() == "Seller: Yandex Seller" {
+		fmt.Println("yandex seller is ok")
+	}
 }
 
 func border(name string) {
